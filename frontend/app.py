@@ -13,26 +13,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for White Background, Pale Pink Sparkles, and Shades
+# Custom CSS for Clean White/Pink Background and Skyblue Button
 page_bg_css = """
 <style>
+/* Smooth plain white to pale pink gradient background */
 .stApp {
-    background-color: #ffffff; /* White */
-    background-image: 
-        radial-gradient(circle at 15% 25%, rgba(255, 182, 193, 0.4) 2px, transparent 3px),
-        radial-gradient(circle at 75% 15%, rgba(255, 182, 193, 0.3) 2px, transparent 3px),
-        radial-gradient(circle at 45% 75%, rgba(255, 182, 193, 0.5) 3px, transparent 4px),
-        radial-gradient(circle at 85% 65%, rgba(255, 182, 193, 0.4) 2px, transparent 3px),
-        linear-gradient(45deg, transparent 48%, rgba(255, 182, 193, 0.2) 49%, rgba(255, 182, 193, 0.2) 51%, transparent 52%),
-        linear-gradient(-45deg, transparent 48%, rgba(255, 182, 193, 0.15) 49%, rgba(255, 182, 193, 0.15) 51%, transparent 52%);
-    background-size: 100px 100px, 150px 150px, 120px 120px, 90px 90px, 80px 80px, 80px 80px;
+    background: linear-gradient(135deg, #ffffff 40%, #ffe4e1 100%);
 }
-/* Ensure text remains readable over the custom background */
+/* Ensure text remains readable */
 h1, h2, h3, p, label, .stMarkdown {
     color: #1a1a1a !important;
 }
 .stMetric value {
     color: #000000 !important;
+}
+/* Skyblue Predict Button */
+button[kind="primary"] {
+    background-color: #87CEFA !important;
+    border-color: #87CEFA !important;
+    color: #1a1a1a !important;
+    font-weight: bold !important;
+}
+button[kind="primary"]:hover {
+    background-color: #5bbbf9 !important;
+    border-color: #5bbbf9 !important;
 }
 </style>
 """
