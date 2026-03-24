@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+      - ./artifacts:/app/artifacts
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./src:/app/src
+      - ./frontend/static/images:/app/frontend/static/images
+      - API_PORT=8000
+    networks:
+      - ml-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend/static/images:/app/frontend/static/images
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    networks:
+      - ml-net
+
+networks:
+  ml-net:
+    driver: bridge
