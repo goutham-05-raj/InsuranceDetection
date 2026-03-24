@@ -13,6 +13,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for Skyblue Background, Orange Sparkles, and Gold Wrinkles
+page_bg_css = """
+<style>
+.stApp {
+    background-color: #87CEFA; /* Light Sky Blue */
+    background-image: 
+        radial-gradient(circle at 15% 25%, rgba(255, 165, 0, 0.6) 2px, transparent 3px),
+        radial-gradient(circle at 75% 15%, rgba(255, 165, 0, 0.5) 2px, transparent 3px),
+        radial-gradient(circle at 45% 75%, rgba(255, 165, 0, 0.8) 3px, transparent 4px),
+        radial-gradient(circle at 85% 65%, rgba(255, 165, 0, 0.6) 2px, transparent 3px),
+        linear-gradient(45deg, transparent 48%, rgba(255, 215, 0, 0.2) 49%, rgba(255, 215, 0, 0.2) 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, rgba(255, 215, 0, 0.15) 49%, rgba(255, 215, 0, 0.15) 51%, transparent 52%);
+    background-size: 100px 100px, 150px 150px, 120px 120px, 90px 90px, 80px 80px, 80px 80px;
+}
+/* Ensure text remains readable over the custom background */
+h1, h2, h3, p, label, .stMarkdown {
+    color: #1a1a1a !important;
+}
+.stMetric value {
+    color: #000000 !important;
+}
+</style>
+"""
+st.markdown(page_bg_css, unsafe_allow_html=True)
+
 # Load XGBoost model directly for standalone deployment
 @st.cache_resource
 def load_model():
