@@ -130,28 +130,37 @@ elif page == "Make a Prediction":
     }
     
     st.markdown("---")
-    st.subheader("🚨 Live AI Prediction Results")
     
-    try:
-        if model is None:
-            st.error(f"Model file not found. Please Reboot the App on Streamlit Cloud to fetch the latest commit. Debug: {error_msg}")
-        else:
-            # Make prediction natively
-            input_df = pd.DataFrame([payload])
-            prob = model.predict_proba(input_df)[0][1]
-            pred = int(prob >= 0.5)
-            
-            def map_risk_level(p):
-                if p >= 0.7: return "High"
-                elif p >= 0.4: return "Medium"
-                return "Low"
-            
-            metric_col1, metric_col2, metric_col3 = st.columns(3)
-            metric_col1.metric("Fraud Probability", f"{float(prob):.2%}")
-            metric_col2.metric("Prediction", "Fraudulent 🚫" if pred == 1 else "Legitimate ✅")
-            metric_col3.metric("Risk Level", map_risk_level(prob))
-    except Exception as e:
-        st.error(f"Error making prediction: {e}")
+    if st.button("Predict Fraud Probability", type="primary"):
+        try:
+            if model is None:
+                st.error(f"Model file not found. Please Reboot the App on Streamlit Cloud to fetch the latest commit. Debug: {error_msg}")
+            else:
+                # Make prediction natively
+                input_df = pd.DataFrame([payload])
+                prob = model.predict_proba(input_df)[0][1]
+                pred = int(prob >= 0.5)
+                
+                def map_risk_level(p):
+                    if p >= 0.7: return "High"
+                    elif p >= 0.4: return "Medium"
+                    return "Low"
+                
+                st.session_state['prediction_results'] = {
+                    'prob': prob,
+                    'pred': pred,
+                    'risk': map_risk_level(prob)
+                }
+        except Exception as e:
+            st.error(f"Error making prediction: {e}")
+
+    if 'prediction_results' in st.session_state:
+        res = st.session_state['prediction_results']
+        st.subheader("🚨 Prediction Results")
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
+        metric_col1.metric("Fraud Probability", f"{float(res['prob']):.2%}")
+        metric_col2.metric("Prediction", "Fraudulent 🚫" if res['pred'] == 1 else "Legitimate ✅")
+        metric_col3.metric("Risk Level", res['risk'])
 
 elif page == "Model Explainability (SHAP)":
     st.title("📈 Model Explainability (XAI)")
