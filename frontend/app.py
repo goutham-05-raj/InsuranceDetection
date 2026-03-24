@@ -41,14 +41,19 @@ st.markdown(page_bg_css, unsafe_allow_html=True)
 # Load XGBoost model directly for standalone deployment
 @st.cache_resource
 def load_model():
-    model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "xgb_model.json")
-    if os.path.exists(model_path):
-        model = xgb.XGBClassifier()
-        model.load_model(model_path)
-        return model
-    return None
+    paths_to_check = [
+        "artifacts/xgb_model.json",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "artifacts", "xgb_model.json")
+    ]
+    
+    for model_path in paths_to_check:
+        if os.path.exists(model_path):
+            model = xgb.XGBClassifier()
+            model.load_model(model_path)
+            return model, None
+    return None, f"Checked paths: {paths_to_check}"
 
-model = load_model()
+model, error_msg = load_model()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Choose a page", ["Overview Dashboard", "Make a Prediction", "Model Explainability (SHAP)"])
@@ -67,6 +72,9 @@ if page == "Overview Dashboard":
     col1.metric("Frontend", "Streamlit 🟢")
     col2.metric("XGBoost Model", "Loaded 🤖" if model else "Not Found ❌")
     col3.metric("Deployment", "Standalone ⚡")
+    
+    if not model:
+        st.error(f"Debug Info: Could not locate model. {error_msg}")
 
 elif page == "Make a Prediction":
     st.title("🔍 Fraud Prediction Input")
@@ -127,7 +135,7 @@ elif page == "Make a Prediction":
             
             try:
                 if model is None:
-                    st.error("Model file not found. Ensure artifacts/xgb_model.json exists.")
+                    st.error(f"Model file not found. Please Reboot the App on Streamlit Cloud to fetch the latest commit. Debug: {error_msg}")
                 else:
                     # Make prediction natively
                     input_df = pd.DataFrame([payload])
