@@ -63,8 +63,8 @@ Prerequisites: Docker and Docker Compose installed.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/goutham-05-raj/InsuranceFraudDetection.git
-   cd InsuranceFraudDetection
+   git clone https://github.com/goutham-05-raj/InsuranceDetection.git
+   cd InsuranceDetection
    ```
 2. Build and run the containers:
    ```bash
