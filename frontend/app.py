@@ -77,84 +77,81 @@ if page == "Overview Dashboard":
         st.error(f"Debug Info: Could not locate model. {error_msg}")
 
 elif page == "Make a Prediction":
-    st.title("🔍 Fraud Prediction Input")
-    st.write("Enter the claim details below to predict fraud probability.")
+    st.title("🔍 Fraud Prediction Input (Live)")
+    st.write("Enter the claim details below. The AI will instantly predict fraud probability in real-time as you type!")
     
-    with st.form("prediction_form"):
-        col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.subheader("Claim Amounts")
+        total_claimed = st.number_input("Total Claimed ($)", value=50000.0)
+        total_approved = st.number_input("Total Approved ($)", value=20000.0)
         
-        with col1:
-            st.subheader("Claim Amounts")
-            total_claimed = st.number_input("Total Claimed ($)", value=50000.0)
-            total_approved = st.number_input("Total Approved ($)", value=20000.0)
-            
-        with col2:
-            st.subheader("Claimant Financials")
-            credit_score = st.number_input("Credit Score", value=650, min_value=300, max_value=850)
-            annual_income = st.number_input("Annual Income ($)", value=70000.0)
-            dti_ratio = st.number_input("Debt to Income Ratio", value=0.4)
-            
-        with col3:
-            st.subheader("Claimant Behavior")
-            claim_freq = st.number_input("Claim Frequency (past year)", value=2, min_value=0)
-            late_payments = st.number_input("Late Payments", value=1, min_value=0)
-            policy_changes = st.number_input("Policy Changes", value=0, min_value=0)
-            
-        st.subheader("Coverage Breakdown")
-        col4, col5, col6, col7, col8 = st.columns(5)
-        bil = col4.number_input("BIL Claimed", value=10000.0)
-        pdl = col5.number_input("PDL Claimed", value=15000.0)
-        pip = col6.number_input("PIP Claimed", value=5000.0)
-        colli = col7.number_input("Collision", value=10000.0)
-        comp = col8.number_input("Comprehensive", value=10000.0)
+    with col2:
+        st.subheader("Claimant Financials")
+        credit_score = st.number_input("Credit Score", value=650, min_value=300, max_value=850)
+        annual_income = st.number_input("Annual Income ($)", value=70000.0)
+        dti_ratio = st.number_input("Debt to Income Ratio", value=0.4)
         
-        submitted = st.form_submit_button("Predict Fraud Probability")
+    with col3:
+        st.subheader("Claimant Behavior")
+        claim_freq = st.number_input("Claim Frequency (past year)", value=2, min_value=0)
+        late_payments = st.number_input("Late Payments", value=1, min_value=0)
+        policy_changes = st.number_input("Policy Changes", value=0, min_value=0)
         
-        if submitted:
-            # Derived features
-            claimed_income_ratio = total_claimed / max(annual_income, 1)
-            approved_claimed_ratio = total_approved / max(total_claimed, 1)
+    st.subheader("Coverage Breakdown")
+    col4, col5, col6, col7, col8 = st.columns(5)
+    bil = col4.number_input("BIL Claimed", value=10000.0)
+    pdl = col5.number_input("PDL Claimed", value=15000.0)
+    pip = col6.number_input("PIP Claimed", value=5000.0)
+    colli = col7.number_input("Collision", value=10000.0)
+    comp = col8.number_input("Comprehensive", value=10000.0)
+    
+    # Derived features
+    claimed_income_ratio = total_claimed / max(annual_income, 1)
+    approved_claimed_ratio = total_approved / max(total_claimed, 1)
+    
+    payload = {
+        "TotalClaimed": total_claimed,
+        "TotalApproved": total_approved,
+        "CreditScore": credit_score,
+        "AnnualIncome": annual_income,
+        "DebtToIncomeRatio": dti_ratio,
+        "ClaimFrequency": claim_freq,
+        "LatePayments": late_payments,
+        "PolicyChanges": policy_changes,
+        "CoverageBIL": bil,
+        "CoveragePDL": pdl,
+        "CoveragePIP": pip,
+        "CoverageCollision": colli,
+        "CoverageComprehensive": comp,
+        "ClaimedToIncomeRatio": claimed_income_ratio,
+        "ApprovedToClaimedRatio": approved_claimed_ratio
+    }
+    
+    st.markdown("---")
+    st.subheader("🚨 Live AI Prediction Results")
+    
+    try:
+        if model is None:
+            st.error(f"Model file not found. Please Reboot the App on Streamlit Cloud to fetch the latest commit. Debug: {error_msg}")
+        else:
+            # Make prediction natively
+            input_df = pd.DataFrame([payload])
+            prob = model.predict_proba(input_df)[0][1]
+            pred = int(prob >= 0.5)
             
-            payload = {
-                "TotalClaimed": total_claimed,
-                "TotalApproved": total_approved,
-                "CreditScore": credit_score,
-                "AnnualIncome": annual_income,
-                "DebtToIncomeRatio": dti_ratio,
-                "ClaimFrequency": claim_freq,
-                "LatePayments": late_payments,
-                "PolicyChanges": policy_changes,
-                "CoverageBIL": bil,
-                "CoveragePDL": pdl,
-                "CoveragePIP": pip,
-                "CoverageCollision": colli,
-                "CoverageComprehensive": comp,
-                "ClaimedToIncomeRatio": claimed_income_ratio,
-                "ApprovedToClaimedRatio": approved_claimed_ratio
-            }
+            def map_risk_level(p):
+                if p >= 0.7: return "High"
+                elif p >= 0.4: return "Medium"
+                return "Low"
             
-            try:
-                if model is None:
-                    st.error(f"Model file not found. Please Reboot the App on Streamlit Cloud to fetch the latest commit. Debug: {error_msg}")
-                else:
-                    # Make prediction natively
-                    input_df = pd.DataFrame([payload])
-                    prob = model.predict_proba(input_df)[0][1]
-                    pred = int(prob >= 0.5)
-                    
-                    def map_risk_level(p):
-                        if p >= 0.7: return "High"
-                        elif p >= 0.4: return "Medium"
-                        return "Low"
-                        
-                    st.success("Prediction Successful!")
-                    
-                    metric_col1, metric_col2, metric_col3 = st.columns(3)
-                    metric_col1.metric("Fraud Probability", f"{float(prob):.2%}")
-                    metric_col2.metric("Prediction", "Fraudulent 🚫" if pred == 1 else "Legitimate ✅")
-                    metric_col3.metric("Risk Level", map_risk_level(prob))
-            except Exception as e:
-                st.error(f"Error making prediction: {e}")
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
+            metric_col1.metric("Fraud Probability", f"{float(prob):.2%}")
+            metric_col2.metric("Prediction", "Fraudulent 🚫" if pred == 1 else "Legitimate ✅")
+            metric_col3.metric("Risk Level", map_risk_level(prob))
+    except Exception as e:
+        st.error(f"Error making prediction: {e}")
 
 elif page == "Model Explainability (SHAP)":
     st.title("📈 Model Explainability (XAI)")
