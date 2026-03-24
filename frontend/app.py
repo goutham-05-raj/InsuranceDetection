@@ -1,9 +1,9 @@
 import streamlit as st
-import requests
 import json
 import os
 import pandas as pd
 from PIL import Image
+import xgboost as xgb
 
 # Streamlit Page Configuration
 st.set_page_config(
@@ -13,8 +13,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# API URL (Read from environment for Docker, fallback for local dev)
-API_URL = os.environ.get("API_URL", "http://localhost:8000")
+# Load XGBoost model directly for standalone deployment
+@st.cache_resource
+def load_model():
+    model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "xgb_model.json")
+    if os.path.exists(model_path):
+        model = xgb.XGBClassifier()
+        model.load_model(model_path)
+        return model
+    return None
+
+model = load_model()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Choose a page", ["Overview Dashboard", "Make a Prediction", "Model Explainability (SHAP)"])
@@ -30,9 +39,9 @@ if page == "Overview Dashboard":
 
     st.subheader("System Infrastructure")
     col1, col2, col3 = st.columns(3)
-    col1.metric("FastAPI Backend", "Online 🟢")
-    col2.metric("XGBoost Model", "Loaded 🤖")
-    col3.metric("Data Simulation", "Ready 🎲")
+    col1.metric("Frontend", "Streamlit 🟢")
+    col2.metric("XGBoost Model", "Loaded 🤖" if model else "Not Found ❌")
+    col3.metric("Deployment", "Standalone ⚡")
 
 elif page == "Make a Prediction":
     st.title("🔍 Fraud Prediction Input")
@@ -92,19 +101,27 @@ elif page == "Make a Prediction":
             }
             
             try:
-                response = requests.post(f"{API_URL}/predict", json=payload)
-                if response.status_code == 200:
-                    result = response.json()
+                if model is None:
+                    st.error("Model file not found. Ensure artifacts/xgb_model.json exists.")
+                else:
+                    # Make prediction natively
+                    input_df = pd.DataFrame([payload])
+                    prob = model.predict_proba(input_df)[0][1]
+                    pred = int(prob >= 0.5)
+                    
+                    def map_risk_level(p):
+                        if p >= 0.7: return "High"
+                        elif p >= 0.4: return "Medium"
+                        return "Low"
+                        
                     st.success("Prediction Successful!")
                     
                     metric_col1, metric_col2, metric_col3 = st.columns(3)
-                    metric_col1.metric("Fraud Probability", f"{result['fraud_probability']:.2%}")
-                    metric_col2.metric("Prediction", "Fraudulent 🚫" if result['fraud_prediction'] == 1 else "Legitimate ✅")
-                    metric_col3.metric("Risk Level", result['risk_level'])
-                else:
-                    st.error(f"Error from API: {response.text}")
-            except requests.exceptions.ConnectionError:
-                st.error("Failed to connect to the prediction API. Ensure the FastAPI backend is running.")
+                    metric_col1.metric("Fraud Probability", f"{float(prob):.2%}")
+                    metric_col2.metric("Prediction", "Fraudulent 🚫" if pred == 1 else "Legitimate ✅")
+                    metric_col3.metric("Risk Level", map_risk_level(prob))
+            except Exception as e:
+                st.error(f"Error making prediction: {e}")
 
 elif page == "Model Explainability (SHAP)":
     st.title("📈 Model Explainability (XAI)")
